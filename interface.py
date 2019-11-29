@@ -559,8 +559,10 @@ def save_data(data, orbits, filepath='', filename=''):
     b = orbits
 
     progress = sum([b[i] in a for i, _ in enumerate(b)])
+    
+    percent_progress = progress/len(b)*100
 
-    print("{} out of {} : {:.03f}%".format(progress, len(b), progress/len(b) )  )
+    print("{} out of {} : {:.03f}%".format(progress, len(b), percent_progress )  )
 
     progress = widgets.FloatProgress(
         value=progress,
