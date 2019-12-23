@@ -221,16 +221,17 @@ def onclick(event, fig, axis, i, n, region):
          
     if i.get_mapping() == None:
          
-        if event.button == 1:
-            style = 'k--'
+        if False:
+            if event.button == 1:
+                style = 'k--'
+                 
+            elif event.button == 3:
+                style = 'k-'
+                 
+            else:
+                style = 'k-.'
              
-        elif event.button == 3:
-            style = 'k-'
-             
-        else:
-            style = 'k-.'
-         
-        plot_all_axes(axis,matplotlib.dates.num2date(X), style=style)
+            plot_all_axes(axis,matplotlib.dates.num2date(X), style=style)
     else:
          
         # add (left click)

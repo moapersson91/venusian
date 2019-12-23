@@ -42,16 +42,33 @@ class Region:
     def __init__(self):
         self.parent = dict()
         
+        
     def add(self,orbit, bound, value):
         
         if (orbit==None) or (bound==None):
             return
         
         try:
+            def reorder(x):
+                newx = dict()
+
+                comment = ''
+                for key in x.keys():
+
+                    if key != 'comment':
+                        newx[key] = x[key]
+                    else:
+                        comment = x[key]
+
+                newx['comment'] = comment
+                return newx
+        
             self.parent[orbit][bound] = value
+            self.parent[orbit] = reorder(self.parent[orbit])
         except:
             self.parent[orbit] = dict()
             self.parent[orbit][bound] = value
+            
             
     def get_value(self,orbit, bound):
         try:
@@ -99,5 +116,11 @@ class Region:
     def del_entry(self,orbit,bound):
         try:
             del self.parent[orbit][bound]
+        except:
+            pass
+            
+    def del_orbit(self, orbit):
+        try:
+            del self.parent[orbit]
         except:
             pass
