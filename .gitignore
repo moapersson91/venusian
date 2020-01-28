@@ -1,0 +1,8 @@
+# Ignore the following folders - created by the programs
+processed_data/*
+__pycache__/*
+orbits/*
+source/__pycache__/*
+*.ipynb*
+
+
