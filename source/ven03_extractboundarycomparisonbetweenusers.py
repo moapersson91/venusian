@@ -7,7 +7,7 @@ import numpy as np
 import datetime
 import time
 import sys
-import matplotlib.pyplot  as plt
+import matplotlib.pyplot as plt
 import extra
 import spiceypy as spice
 from irfpy.vexpvat import vexspice as vspice
