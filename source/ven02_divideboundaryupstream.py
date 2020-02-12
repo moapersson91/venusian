@@ -130,14 +130,10 @@ def fit_ion_composition_boundary(users_locations):
         r_fit = np.average(r_data, weights=(1 / error))
 
     # Fit a straight line from the location of the circle end at X=0 and back
-    error = pdiff[px < 0.]  # distance between pre and post to be used as an error?
+    exclude = (px < 0.) & (pdiff > 0.01)  # I don't trust the errors of less than 0.01. They make too big effect on the fitting scheme and I don't think we can determine to such a high degree. Therefore, remove these errors.
+    error = pdiff[exclude]  # distance between pre and post to be used as an error?
 
-    par = rms_fitting_icb(pr[px < 0.], px[px < 0.], error, r_fit)
-
-    if par[0] > 0.1:
-        print(np.nanmin(pr[px < 0.]), np.nanmax(pr[px < 0.]), np.nanmin(px[px < 0.]), np.nanmax(px[px < 0.]), np.nanmin(error), np.nanmax(error), r_fit)
-        for (x, r, e) in zip(px[px < 0.], pr[px < 0.], error):
-            print(x, r, e)
+    par = rms_fitting_icb(pr[exclude], px[exclude], error, r_fit)
 
     return par, r_fit, error
 
@@ -149,11 +145,12 @@ def main():
 
     colors = {'highEUV': 'C3', 'lowEUV': 'k'}
 
-    # conditions = ['SWmom', 'SWene']
-    conditions = ['SWene']
+    conditions = ['SWene', 'SWmom']
+    # conditions = ['SWene']
     EUV_conditions = ['highEUV', 'lowEUV']
+    fc = 1.67e-27 * .5 / 1.602e-19
     for condition in conditions:
-        fig_radius, AX_radius = plt.subplots(2, 2, figsize=(12, 8))
+        fig_radius, AX_radius = plt.subplots(2, 2, figsize=(12, 6))
         for EUV_condition in EUV_conditions:
             print(condition)
             tic0 = time.time()
@@ -173,6 +170,7 @@ def main():
                 limit = [cond_limits[idx], cond_limits[idx + 1]]
                 print(idx, '/', Nr_cd_bins - 2, limit)
                 orbits = extra.import_orbit_numbers(condition, limit, EUV_condition)
+                limit = [cond_limits[idx] * fc, cond_limits[idx + 1] * fc]
                 # print(orbits)
 
                 users_locations = extra.import_boundary_locations(orbits, plim=0.5)
@@ -208,15 +206,14 @@ def main():
                 AX[1, idx - 1].set_xlabel('k: {:.4}, d: {:.4}'.format(par[0], r_fit))
 
                 # Plot the radial distance of the boundaries for X = 0 and X = -2.
-                fc = 1.67e-27 * .5 / 1.602e-19
-                AX_radius[1, 0].plot(np.nanmean(limit) * fc, r_fit, 'o', color=colors[EUV_condition])  # IMB at -0.
+                AX_radius[1, 0].plot(np.nanmean(limit), r_fit, 'o', color=colors[EUV_condition])  # IMB at -0.
                 BS_radius_X0 = l_fit / (1 + e_fit * np.cos(np.deg2rad(90)))  # BS at -0.
-                AX_radius[0, 0].plot(np.nanmean(limit) * fc, BS_radius_X0, 'o', color=colors[EUV_condition])
+                AX_radius[0, 0].plot(np.nanmean(limit), BS_radius_X0, 'o', color=colors[EUV_condition])
                 r_fit_X2 = linear_regression(-2., r_fit, par)  # IMB at -2.
-                AX_radius[1, 1].plot(np.nanmean(limit) * fc, r_fit_X2, 'o', color=colors[EUV_condition])
+                AX_radius[1, 1].plot(np.nanmean(limit), r_fit_X2, 'o', color=colors[EUV_condition])
                 idr = np.argmin(np.abs(BS_x + 2.))
                 BS_radius_X2 = BS_y[idr]  # BS at -2.
-                AX_radius[0, 1].plot(np.nanmean(limit) * fc, BS_radius_X2, 'o', color=colors[EUV_condition])
+                AX_radius[0, 1].plot(np.nanmean(limit), BS_radius_X2, 'o', color=colors[EUV_condition])
 
                 for ibd, bd_name in enumerate(['bow shock', 'ion composition boundary']):
                     for user in users:
@@ -255,9 +252,6 @@ def main():
             AX[0, 0].set_ylabel('Bow Shock')
             AX[1, 0].set_ylabel('IMB')
 
-
-            # AX_fit[1, 2].set_ylabel('cos theta')
-
             filename = 'processed_data/ven02/ven02-boundary_locations_{}_{}.pdf'.format(EUV_condition, condition)
             fig.savefig(filename, bbox_inches='tight')
 
@@ -265,19 +259,22 @@ def main():
             fig_fit.savefig(filename_fit, bbox_inches='tight')
             print('Plotted boundaries for {}, {} in {:.4} s.'.format(EUV_condition, condition, time.time() - tic0))
 
-        AX_radius[0, 0].set_ylim(1., 3.7)
-        AX_radius[0, 1].set_ylim(1., 3.7)
-        AX_radius[1, 0].set_ylim(0., 1.3)
-        AX_radius[1, 1].set_ylim(0., 1.3)
+        AX_radius[0, 0].set_ylim(0.9, 1.7)
+        AX_radius[0, 1].set_ylim(2.9, 3.7)
+        AX_radius[1, 0].set_ylim(0.9, 1.3)
+        AX_radius[1, 1].set_ylim(0.9, 1.3)
         for ax in AX_radius.ravel():
             ax.set_xscale('log')
 
-        AX_radius[0, 0].set_ylabel('Bow Shock')
-        AX_radius[1, 0].set_ylabel('IMB')
-        AX_radius[0, 0].set_title('X = 0.')
-        AX_radius[0, 1].set_title('X = -2.')
+        AX_radius[0, 0].set_ylabel('Bow Shock\nRadial distance [Rv]')
+        AX_radius[1, 0].set_ylabel('IMB\nRadial distance [Rv]')
+        AX_radius[0, 0].set_title('X = 0. Rv')
+        AX_radius[0, 1].set_title('X = -2. Rv')
         AX_radius[1, 0].set_xlabel('SW energy flux')
         AX_radius[1, 1].set_xlabel('SW energy flux')
+        AX_radius[1, 1].plot(1e15, 0, 'o', color=colors['highEUV'], label='high EUV')
+        AX_radius[1, 1].plot(1e15, 0, 'o', color=colors['lowEUV'], label='low EUV')
+        AX_radius[1, 1].legend()
         filename_radius = 'processed_data/ven02/ven02-boundary_radialdistance_{}.pdf'.format(condition)
         fig_radius.savefig(filename_radius, bbox_inches='tight')
 
